@@ -15,7 +15,7 @@ FRP_INET_PORT='7022'
 LOCAL_SSH_PORT='22'
 
 # frp token(FRP 密码，用于反向代理连接保证安全性)
-#FRP_TOKEN='123456)'
+FRP_TOKEN=${FRP_TOKEN:-98765432}
 # user name which can be used to identify the service
 USER_NAME=$(whoami)
 
@@ -46,7 +46,6 @@ FRPS=frps_${USER_NAME}
 
 
 install_frpc_config() {
-sudo apt-get install -y openssh-server
     echo 'install frp client configuration file'
     echo "
 [common]
@@ -185,12 +184,6 @@ download_frp_64() {
 }
 
 install_frp() {
-    stty -echo
-    printf "FRP Token: "
-    read FRP_TOKEN
-    stty echo
-    printf "\n"
-
     download_frp_64
 
     if [ ! -f /usr/bin/frpc ]; then
