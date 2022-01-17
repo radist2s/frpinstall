@@ -1,30 +1,31 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 set -e
 
 #==========frp related configuration=====
 # please refer to https://github.com/fatedier/frp
 # frp server ip address(公网主机ip地址)
-FRP_SERVER_IP='127.0.0.1'
+FRP_SERVER_IP='62.109.29.208'
 # frp server port (公网主机FRP反向连接端口)
 FRP_SERVER_PORT='7000'
 
 # frp server port for ssh(公网主机外网端口号，供ssh使用)
-FRP_INET_PORT='6000'
+FRP_INET_PORT='7022'
 
 # the client machine 's ssh port
 LOCAL_SSH_PORT='22'
 
 # frp token(FRP 密码，用于反向代理连接保证安全性)
-FRP_TOKEN='123456)'
+#FRP_TOKEN='123456)'
 # user name which can be used to identify the service
-USER_NAME='user'
+USER_NAME=$(whoami)
 
 #########################################
 #============frp download =============
 # frp version
 # please refer to https://github.com/fatedier/frp/releases
 #TARFILE='frp_0.20.0_linux_386.tar.gz'
-TARFILE='frp_0.20.0_linux_amd64.tar.gz'
+TARFILE='frp_0.38.0_linux_386.tar.gz'
+TARFILE_VERSION='v0.38.0'
 
 #===========frp configuration file=======
 # frp client configuration filename
@@ -45,12 +46,14 @@ FRPS=frps_${USER_NAME}
 
 
 install_frpc_config() {
+sudo apt-get install -y openssh-server
     echo 'install frp client configuration file'
     echo "
 [common]
 server_addr = ${FRP_SERVER_IP}
 server_port = ${FRP_SERVER_PORT}
 token = ${FRP_TOKEN}
+authentication_method = token
 
 [ssh]
 type = tcp
@@ -66,6 +69,7 @@ install_frps_config() {
 [common]
 bind_port = ${FRP_SERVER_PORT}
 token = ${FRP_TOKEN}
+authentication_method = token
 " | sudo tee /etc/frp/${FRPSCONF}
 }
 
@@ -166,7 +170,7 @@ download_frp_64() {
         echo "download ${TARFILE}"
         #proxychains wget https://github.com/fatedier/frp/releases/download/v0.20.0/${TARFILE}
         
-        wget https://github.com/fatedier/frp/releases/download/v0.20.0/${TARFILE}
+        wget https://github.com/fatedier/frp/releases/download/${TARFILE_VERSION}/${TARFILE}
         echo "extract ${TARFILE}"
         tar -xzvf $TARFILE
     else
@@ -181,6 +185,12 @@ download_frp_64() {
 }
 
 install_frp() {
+    stty -echo
+    printf "FRP Token: "
+    read FRP_TOKEN
+    stty echo
+    printf "\n"
+
     download_frp_64
 
     if [ ! -f /usr/bin/frpc ]; then
@@ -199,6 +209,9 @@ install_frp() {
     fi
     install_frpc_config
     install_frps_config
+
+    rm -rf ${TARFILENAME}
+    rm ${TARFILE}
 }
 
 uninstall_frp() {
